@@ -419,6 +419,11 @@ input[type="tel"] {
   margin: 0.3rem 0 0;
 }
 
+.notice-strong {
+  color: var(--terracotta-dark);
+  font-weight: 700;
+}
+
 .error-banner {
   background: #fde8e4;
   color: var(--terracotta-dark);

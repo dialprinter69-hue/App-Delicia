@@ -358,10 +358,12 @@ function renderOrder() {
   }
 
   const payHint = $("#pay-cashapp-hint");
+  const cashAppPreDisclaimer = $("#cashapp-pre-disclaimer");
   const submitBtn = $("#submit-order");
   const isCa = state.paymentCashApp;
   if (submitBtn) {
     if (payHint) payHint.hidden = !isCa;
+    if (cashAppPreDisclaimer) cashAppPreDisclaimer.hidden = !isCa;
     submitBtn.textContent = isCa ? "Pagar por Cash App y enviar su pedido" : "Confirmar su pedido";
     const manual = $("#cash-manual-wrap");
     if (manual && !isCa) manual.hidden = true;
@@ -548,7 +550,7 @@ function submitOrder() {
     alert("No se pudo abrir Cash App automáticamente. Usa el enlace manual.");
   }
   const proceedAfterPay = window.confirm(
-    "Cuando termines de pagar en Cash App, toca Aceptar para confirmar tu pedido en WhatsApp."
+    "Cash App ya se abrió. Después de pagar, toca Aceptar para confirmar tu pedido en WhatsApp."
   );
   if (!proceedAfterPay) return;
   openWhatsappUrl(wa);
