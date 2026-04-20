@@ -1,0 +1,25 @@
+{
+  "name": "Delicias",
+  "short_name": "Delicias",
+  "description": "Cocina criolla con sazón de hogar — menú y pedidos por WhatsApp",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#1E3D2F",
+  "theme_color": "#1E3D2F",
+  "lang": "es",
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}
