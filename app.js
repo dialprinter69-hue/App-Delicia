@@ -32,6 +32,9 @@ const state = {
 };
 let pendingWhatsappUrlAfterCash = "";
 const BOT_API_BASE = "http://10.0.0.22:3000";
+const BOT_API_TOKEN = "delicia-change-this-token";
+const ORDERS_ADMIN_PARAM = "admin";
+const ORDERS_ADMIN_VALUE = "1";
 
 const $ = (sel, root = document) => root.querySelector(sel);
 
@@ -580,7 +583,10 @@ async function loadOrders() {
     const res = await fetch(url, {
       cache: "no-store",
       mode: "cors",
-      headers: { "Cache-Control": "no-cache" },
+      headers: {
+        "Cache-Control": "no-cache",
+        "X-Admin-Token": BOT_API_TOKEN,
+      },
     });
     if (!res.ok) throw new Error("HTTP " + res.status);
     const data = await res.json();
@@ -593,9 +599,9 @@ async function loadOrders() {
       .map(
         (o) => `
         <div class="order-bot-item">
-          <h3>#${o.id ?? "-"}</h3>
-          <p>${formatOrderItems(o.items)}</p>
-          <p><strong>Estado:</strong> ${o.status ?? "pendiente"}</p>
+          <h3>Orden #${o.id ?? "-"}</h3>
+          <p class="order-bot-items">${formatOrderItems(o.items)}</p>
+          <p class="order-bot-status"><strong>Estado:</strong> ${o.status ?? "pendiente"}</p>
           ${
             o.status === "listo"
               ? '<span class="order-ready-chip">✅ Lista</span>'
@@ -613,7 +619,7 @@ async function loadOrders() {
 
 function formatOrderItems(items) {
   if (!Array.isArray(items) || items.length === 0) return "Sin items";
-  return items.map((it) => `${it.qty || 1}x ${it.name || "item"}`).join(", ");
+  return items.map((it) => `${it.qty || 1}x ${it.name || "item"}`).join(" • ");
 }
 
 async function markOrderDone(orderId) {
@@ -622,7 +628,10 @@ async function markOrderDone(orderId) {
     const res = await fetch(`${BOT_API_BASE}/done/${encodeURIComponent(orderId)}`, {
       method: "POST",
       mode: "cors",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "X-Admin-Token": BOT_API_TOKEN,
+      },
     });
     if (!res.ok) throw new Error("HTTP " + res.status);
     await loadOrders();
@@ -632,6 +641,14 @@ async function markOrderDone(orderId) {
 }
 
 function startOrdersPolling() {
+  const ordersPanel = document.getElementById("orders-panel");
+  const isAdminView = new URLSearchParams(window.location.search).get(ORDERS_ADMIN_PARAM) === ORDERS_ADMIN_VALUE;
+  if (!isAdminView) {
+    if (ordersPanel) ordersPanel.hidden = true;
+    return;
+  }
+  if (ordersPanel) ordersPanel.hidden = false;
+
   // Carga inicial y polling continuo.
   loadOrders();
   window.setInterval(() => {
