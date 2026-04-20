@@ -12,7 +12,7 @@
   </head>
   <body>
     <header class="site-header">
-      <h1>Delicias</h1>
+      <h1 class="brand-title">Delicias</h1>
       <p>Cocina criolla con sazón de hogar</p>
       <div class="header-actions">
         <button type="button" class="btn btn-secondary" id="btn-refresh-menu">Actualizar menú</button>
@@ -50,14 +50,25 @@
 
         <div class="switch-row">
           <input type="checkbox" id="delivery-switch" />
-          <label for="delivery-switch" style="font-weight: 600">Delivery a domicilio (+$4.00)</label>
+          <label for="delivery-switch" class="inline-option delivery-option">
+            <span class="option-logo" aria-hidden="true">🚚</span>
+            <span>Delivery a domicilio (+$4.00)</span>
+          </label>
         </div>
         <p class="notice">Se añade $4.00 al total cuando seleccionas delivery.</p>
 
         <div class="radio-row">
           <span style="font-weight: 600">Método de pago:</span>
-          <label><input type="radio" name="pay" id="pay-cash" checked /> Efectivo</label>
-          <label><input type="radio" name="pay" id="pay-cashapp" /> Cash App</label>
+          <label class="inline-option">
+            <input type="radio" name="pay" id="pay-cash" checked />
+            <span class="option-logo" aria-hidden="true">💵</span>
+            <span>Efectivo</span>
+          </label>
+          <label class="inline-option">
+            <input type="radio" name="pay" id="pay-cashapp" />
+            <span class="option-logo cash-app-logo" aria-hidden="true">$</span>
+            <span>Cash App</span>
+          </label>
         </div>
         <p class="notice" id="pay-cashapp-hint" hidden>
           Al tocar el botón: 1) se abre Cash App con el total para pagar; 2) al confirmar, se abre WhatsApp con tu resumen para enviarlo al restaurante.
