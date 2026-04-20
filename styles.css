@@ -11,7 +11,7 @@
   --ink-muted: #5c4f42;
   --radius: 14px;
   --shadow: 0 8px 28px rgba(42, 33, 24, 0.12);
-  font-family: "Segoe UI", system-ui, sans-serif;
+  font-family: "Inter", "Segoe UI", system-ui, sans-serif;
 }
 
 *,
@@ -77,6 +77,9 @@ header.site-header h1 {
 }
 
 .brand-title {
+  font-family: "Playfair Display", Georgia, "Times New Roman", serif;
+  font-weight: 800;
+  letter-spacing: 0.04em;
   text-shadow: 0 3px 14px rgba(0, 0, 0, 0.28);
 }
 
