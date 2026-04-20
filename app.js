@@ -359,9 +359,9 @@ function renderOrder() {
 
   const payHint = $("#pay-cashapp-hint");
   const submitBtn = $("#submit-order");
-  if (payHint && submitBtn) {
-    const isCa = state.paymentCashApp;
-    payHint.hidden = !isCa;
+  const isCa = state.paymentCashApp;
+  if (submitBtn) {
+    if (payHint) payHint.hidden = !isCa;
     submitBtn.textContent = isCa ? "Pagar por Cash App y enviar su pedido" : "Confirmar su pedido";
     const manual = $("#cash-manual-wrap");
     if (manual && !isCa) manual.hidden = true;
