@@ -593,27 +593,20 @@ function submitOrder() {
     return;
   }
 
-  if (state.cashAppFlowMode === "delay") {
-    const opened = tryOpenCashAppNewTab(cashUrl);
-    if (!opened) {
-      showCashManualLink(cashUrl);
-      alert("No se pudo abrir Cash App automáticamente. Usa el enlace debajo del botón.");
-    }
-    showWhatsappDelayThenNavigate(wa, () => resetOrderFormAfterSend());
-    return;
-  }
-
   const openedCash = tryOpenCashAppNewTab(cashUrl);
   if (!openedCash) {
     showCashManualLink(cashUrl);
+    alert("No se pudo abrir Cash App automáticamente. Usa el enlace manual y luego confirma para abrir WhatsApp.");
   }
 
-  const gap = Math.max(200, Number(CONFIG.cashAppThenWhatsappGapMs) || 750);
-  setTimeout(() => {
-    openWhatsappUrl(wa);
-    resetOrderFormAfterSend();
-    alert("Listo: revisa Cash App y el chat que se abrió. Confirma el pedido enviando el mensaje.");
-  }, gap);
+  const continueToWhatsapp = window.confirm(
+    "Primero paga en Cash App. Cuando termines, toca Aceptar para abrir WhatsApp y confirmar el pedido."
+  );
+  if (!continueToWhatsapp) return;
+
+  openWhatsappUrl(wa);
+  resetOrderFormAfterSend();
+  alert("Listo: se abrió WhatsApp con el total para confirmar tu pedido.");
 }
 
 async function init() {
