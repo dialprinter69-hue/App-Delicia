@@ -317,15 +317,15 @@ section h2 {
 
 .field-grid {
   display: grid;
-  gap: 0.65rem;
-  margin: 1rem 0;
+  gap: 0.9rem;
+  margin: 1.2rem 0;
 }
 
 label {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  font-size: 0.88rem;
+  gap: 0.35rem;
+  font-size: 0.96rem;
   font-weight: 600;
   color: var(--ink);
 }
@@ -333,31 +333,38 @@ label {
 input[type="text"],
 input[type="tel"] {
   font: inherit;
-  padding: 0.55rem 0.65rem;
-  border-radius: 8px;
+  padding: 0.78rem 0.82rem;
+  border-radius: 10px;
   border: 1px solid rgba(42, 33, 24, 0.2);
   background: #fff;
+  min-height: 2.75rem;
+  font-size: 1rem;
 }
 
 .switch-row,
 .radio-row {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.85rem;
   flex-wrap: wrap;
-  margin: 0.5rem 0;
+  margin: 0.8rem 0;
 }
 
 .inline-option {
   display: inline-flex;
   flex-direction: row;
   align-items: center;
-  gap: 0.38rem;
+  gap: 0.5rem;
   font-weight: 600;
+  font-size: 1rem;
+  padding: 0.3rem 0.15rem;
 }
 
 .inline-option input {
   margin: 0;
+  width: 1.2rem;
+  height: 1.2rem;
+  accent-color: var(--moss);
 }
 
 .option-logo {
@@ -385,14 +392,14 @@ input[type="tel"] {
 }
 
 .delivery-option {
-  font-size: 1rem;
+  font-size: 1.08rem;
 }
 
 .drinks-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 0.5rem;
-  margin-top: 0.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
 }
 
 .drink-row {
@@ -400,10 +407,10 @@ input[type="tel"] {
   align-items: center;
   justify-content: space-between;
   background: #fff;
-  padding: 0.4rem 0.5rem;
-  border-radius: 8px;
+  padding: 0.65rem 0.72rem;
+  border-radius: 10px;
   border: 1px solid var(--line-soft);
-  font-size: 0.85rem;
+  font-size: 0.96rem;
 }
 
 .summary {
@@ -414,9 +421,9 @@ input[type="tel"] {
 }
 
 .notice {
-  font-size: 0.85rem;
+  font-size: 0.95rem;
   color: var(--ink-muted);
-  margin: 0.3rem 0 0;
+  margin: 0.38rem 0 0;
 }
 
 .notice-strong {
@@ -433,7 +440,22 @@ input[type="tel"] {
 }
 
 #open-wa-after-cash {
-  margin-top: 0.45rem;
+  margin-top: 0.55rem;
+  width: 100%;
+  min-height: 2.85rem;
+  font-size: 1rem;
+}
+
+#delivery-switch {
+  width: 1.25rem;
+  height: 1.25rem;
+  accent-color: var(--terracotta);
+}
+
+#submit-order {
+  min-height: 2.95rem;
+  font-size: 1.04rem;
+  font-weight: 700;
 }
 
 .error-banner {
@@ -593,6 +615,14 @@ input[type="tel"] {
 
   .order-bot-item p {
     font-size: 0.95rem;
+  }
+
+  .drinks-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .inline-option {
+    width: 100%;
   }
 }
 
