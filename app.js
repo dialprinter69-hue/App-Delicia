@@ -578,6 +578,7 @@ async function loadOrders() {
     const res = await fetch("http://localhost:3000/orders", { cache: "no-store" });
     if (!res.ok) throw new Error("HTTP " + res.status);
     const data = await res.json();
+    console.log("📦 orders:", data);
     if (!Array.isArray(data) || data.length === 0) {
       root.innerHTML = '<p class="empty-hint">No hay pedidos recibidos.</p>';
       return;
@@ -605,7 +606,7 @@ async function init() {
   await fetchMenu();
   render();
   loadOrders();
-  setInterval(loadOrders, 3000);
+  setInterval(loadOrders, 2000);
 
   if ("serviceWorker" in navigator) {
     try {
