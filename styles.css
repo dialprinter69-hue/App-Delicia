@@ -1,16 +1,20 @@
 :root {
   --moss: #1e3d2f;
   --moss-light: #2d5a45;
+  --moss-deep: #163126;
   --terracotta: #b84c2f;
   --terracotta-dark: #8e3a24;
+  --terracotta-soft: #d97a58;
   --gold: #d4a574;
   --gold-dark: #a67b4a;
   --cream: #fff9f2;
-  --cream-surface: #fff3e8;
+  --cream-surface: #fff5ec;
+  --cream-card: #fffdfb;
   --ink: #2a2118;
-  --ink-muted: #5c4f42;
+  --ink-muted: #4d4034;
+  --line-soft: rgba(42, 33, 24, 0.12);
   --radius: 14px;
-  --shadow: 0 8px 28px rgba(42, 33, 24, 0.12);
+  --shadow: 0 10px 30px rgba(42, 33, 24, 0.12);
   font-family: "Inter", "Segoe UI", system-ui, sans-serif;
 }
 
@@ -23,13 +27,15 @@
 body {
   margin: 0;
   min-height: 100dvh;
-  background: var(--cream);
+  background: linear-gradient(180deg, #fffaf4 0%, #fff7ee 100%);
   color: var(--ink);
   line-height: 1.45;
 }
 
 header.site-header {
-  background: linear-gradient(135deg, var(--moss) 0%, var(--moss-light) 100%);
+  background:
+    radial-gradient(circle at 85% 15%, rgba(212, 165, 116, 0.22), transparent 36%),
+    linear-gradient(135deg, var(--moss-deep) 0%, var(--moss) 46%, var(--moss-light) 100%);
   color: var(--cream);
   padding: 1.35rem 1rem 1.65rem;
   position: sticky;
@@ -37,38 +43,11 @@ header.site-header {
   z-index: 20;
   box-shadow: var(--shadow);
   text-align: center;
-}
-
-.brand-row {
-  display: inline-grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 0.65rem;
-  margin: 0 0 0.35rem;
-  min-width: min(100%, 360px);
-}
-
-.brand-icon {
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 249, 242, 0.16);
-  border: 1px solid rgba(255, 249, 242, 0.28);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18);
-  color: rgba(255, 249, 242, 0.96);
-}
-
-.brand-icon svg {
-  width: 1.25rem;
-  height: 1.25rem;
-  fill: currentColor;
+  border-bottom: 2px solid rgba(212, 165, 116, 0.35);
 }
 
 header.site-header h1 {
-  margin: 0;
+  margin: 0 0 0.35rem;
   font-size: 2.1rem;
   font-weight: 800;
   letter-spacing: 0.03em;
@@ -86,7 +65,8 @@ header.site-header h1 {
 header.site-header p {
   margin: 0;
   font-size: 1rem;
-  opacity: 0.92;
+  opacity: 0.96;
+  color: #f9efe2;
 }
 
 .header-actions {
@@ -113,9 +93,9 @@ button:active,
 }
 
 .btn-secondary {
-  background: rgba(255, 249, 242, 0.15);
+  background: rgba(255, 249, 242, 0.2);
   color: var(--cream);
-  border: 1px solid rgba(255, 249, 242, 0.35);
+  border: 1px solid rgba(255, 249, 242, 0.45);
 }
 
 .btn-secondary:hover {
@@ -123,12 +103,12 @@ button:active,
 }
 
 .btn-primary {
-  background: var(--terracotta);
+  background: linear-gradient(135deg, var(--terracotta) 0%, var(--terracotta-soft) 100%);
   color: var(--cream);
 }
 
 .btn-primary:hover {
-  background: var(--terracotta-dark);
+  background: linear-gradient(135deg, var(--terracotta-dark) 0%, var(--terracotta) 100%);
 }
 
 .btn-primary:disabled {
@@ -156,6 +136,7 @@ section h2 {
   font-size: 1.1rem;
   color: var(--moss);
   margin: 1.25rem 0 0.75rem;
+  letter-spacing: 0.01em;
 }
 
 .menu-list {
@@ -165,11 +146,11 @@ section h2 {
 }
 
 .menu-card {
-  background: var(--cream-surface);
+  background: var(--cream-card);
   border-radius: var(--radius);
   overflow: hidden;
   box-shadow: var(--shadow);
-  border: 1px solid rgba(184, 76, 47, 0.15);
+  border: 1px solid rgba(184, 76, 47, 0.2);
   display: grid;
   grid-template-columns: 112px 1fr;
   gap: 0;
@@ -199,7 +180,7 @@ section h2 {
 
 .menu-card-body .desc {
   margin: 0;
-  font-size: 0.82rem;
+  font-size: 0.86rem;
   color: var(--ink-muted);
   flex: 1;
 }
@@ -218,10 +199,10 @@ section h2 {
 }
 
 .order-panel {
-  background: var(--cream-surface);
+  background: var(--cream-card);
   border-radius: var(--radius);
   padding: 1rem;
-  border: 1px solid rgba(184, 76, 47, 0.2);
+  border: 1px solid rgba(184, 76, 47, 0.24);
   box-shadow: var(--shadow);
 }
 
@@ -237,7 +218,7 @@ section h2 {
   justify-content: space-between;
   gap: 0.5rem;
   padding: 0.5rem 0;
-  border-bottom: 1px solid rgba(42, 33, 24, 0.08);
+  border-bottom: 1px solid var(--line-soft);
 }
 
 .order-lines li:last-child {
@@ -385,7 +366,7 @@ input[type="tel"] {
   background: #fff;
   padding: 0.4rem 0.5rem;
   border-radius: 8px;
-  border: 1px solid rgba(42, 33, 24, 0.1);
+  border: 1px solid var(--line-soft);
   font-size: 0.85rem;
 }
 
@@ -396,9 +377,9 @@ input[type="tel"] {
 }
 
 .notice {
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   color: var(--ink-muted);
-  margin: 0.25rem 0 0;
+  margin: 0.3rem 0 0;
 }
 
 .error-banner {
