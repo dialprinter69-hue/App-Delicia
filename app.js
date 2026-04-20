@@ -492,6 +492,18 @@ function openWhatsappUrl(waUrl) {
   }
 }
 
+/**
+ * Reserva una pestaña en el gesto de clic para evitar bloqueos del segundo popup.
+ * Luego podemos cargar el enlace real cuando el usuario confirme.
+ */
+function reserveWindowForLater() {
+  try {
+    return window.open("about:blank", "_blank", "noopener,noreferrer");
+  } catch {
+    return null;
+  }
+}
+
 function submitOrder() {
   const name = $("#customer-name")?.value?.trim() || "";
   const phone = $("#customer-phone")?.value?.trim() || "";
@@ -525,6 +537,7 @@ function submitOrder() {
     return;
   }
 
+  const reservedWhatsappWindow = reserveWindowForLater();
   const openedCash = tryOpenCashAppNewTab(cashUrl);
   if (!openedCash) {
     showCashManualLink(cashUrl);
@@ -534,9 +547,18 @@ function submitOrder() {
   const continueToWhatsapp = window.confirm(
     "Primero paga en Cash App. Cuando termines, toca Aceptar para abrir WhatsApp y confirmar el pedido."
   );
-  if (!continueToWhatsapp) return;
+  if (!continueToWhatsapp) {
+    if (reservedWhatsappWindow && !reservedWhatsappWindow.closed) {
+      reservedWhatsappWindow.close();
+    }
+    return;
+  }
 
-  openWhatsappUrl(wa);
+  if (reservedWhatsappWindow && !reservedWhatsappWindow.closed) {
+    reservedWhatsappWindow.location.href = wa;
+  } else {
+    openWhatsappUrl(wa);
+  }
   resetOrderFormAfterSend();
   alert("Listo: se abrió WhatsApp con el total para confirmar tu pedido.");
 }
