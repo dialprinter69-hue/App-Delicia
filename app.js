@@ -575,7 +575,12 @@ async function loadOrders() {
   const root = document.getElementById("orders");
   if (!root) return;
   try {
-    const res = await fetch("http://localhost:3000/orders", { cache: "no-store" });
+    const url = `http://localhost:3000/orders?t=${Date.now()}`;
+    const res = await fetch(url, {
+      cache: "no-store",
+      mode: "cors",
+      headers: { "Cache-Control": "no-cache" },
+    });
     if (!res.ok) throw new Error("HTTP " + res.status);
     const data = await res.json();
     console.log("📦 orders:", data);
@@ -600,13 +605,26 @@ async function loadOrders() {
   }
 }
 
+function startOrdersPolling() {
+  // Carga inicial y polling continuo.
+  loadOrders();
+  window.setInterval(() => {
+    loadOrders();
+  }, 2000);
+
+  // Al volver a enfocar la pestaña, fuerza refresco inmediato.
+  window.addEventListener("focus", () => loadOrders());
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) loadOrders();
+  });
+}
+
 async function init() {
   loadState();
   setupForm();
   await fetchMenu();
   render();
-  loadOrders();
-  setInterval(loadOrders, 2000);
+  startOrdersPolling();
 
   if ("serviceWorker" in navigator) {
     try {

@@ -1,4 +1,4 @@
-const CACHE = "delicias-pwa-v17";
+const CACHE = "delicias-pwa-v18";
 const PRECACHE = ["./", "./index.html", "./styles.css", "./app.js", "./manifest.webmanifest", "./icons/icon.svg"];
 
 self.addEventListener("install", (event) => {
