@@ -575,7 +575,7 @@ async function loadOrders() {
   const root = document.getElementById("orders");
   if (!root) return;
   try {
-    const url = `http://localhost:3000/orders?t=${Date.now()}`;
+    const url = `http://10.0.0.22:3000/orders?t=${Date.now()}`;
     const res = await fetch(url, {
       cache: "no-store",
       mode: "cors",
