@@ -30,7 +30,6 @@ const state = {
   paymentCashApp: false,
   loadError: null,
 };
-let pendingWhatsappUrlAfterCash = "";
 
 const $ = (sel, root = document) => root.querySelector(sel);
 
@@ -221,6 +220,20 @@ function addToCart(id) {
   render();
 }
 
+function animateAddFeedback(addBtn) {
+  if (!addBtn) return;
+  addBtn.classList.remove("add-feedback");
+  // Reinicia la animación si el usuario toca varias veces rápido.
+  void addBtn.offsetWidth;
+  addBtn.classList.add("add-feedback");
+
+  const bubble = document.createElement("span");
+  bubble.className = "add-bubble";
+  bubble.textContent = "+1";
+  addBtn.appendChild(bubble);
+  window.setTimeout(() => bubble.remove(), 650);
+}
+
 function renderMenu() {
   const list = $("#menu-list");
   if (!list) return;
@@ -272,7 +285,10 @@ function renderMenu() {
     priceEl.textContent = item.price;
     const addBtn = body.querySelector(".btn-add");
     addBtn.dataset.id = item.id;
-    addBtn.addEventListener("click", () => addToCart(item.id));
+    addBtn.addEventListener("click", () => {
+      animateAddFeedback(addBtn);
+      addToCart(item.id);
+    });
     card.append(img, body);
     list.appendChild(card);
   }
@@ -342,13 +358,11 @@ function renderOrder() {
   }
 
   const payHint = $("#pay-cashapp-hint");
-  const cashPanel = $("#cash-app-flow-panel");
   const submitBtn = $("#submit-order");
-  if (payHint && cashPanel && submitBtn) {
+  if (payHint && submitBtn) {
     const isCa = state.paymentCashApp;
     payHint.hidden = !isCa;
-    cashPanel.hidden = !isCa;
-    submitBtn.textContent = isCa ? "Pagar + WhatsApp" : "Enviar por WhatsApp";
+    submitBtn.textContent = isCa ? "Pagar por Cash App y enviar su pedido" : "Confirmar su pedido";
     const manual = $("#cash-manual-wrap");
     if (manual && !isCa) manual.hidden = true;
   }
@@ -400,15 +414,6 @@ function setupForm() {
   });
 
   $("#submit-order")?.addEventListener("click", submitOrder);
-  $("#open-wa-after-cash")?.addEventListener("click", () => {
-    if (!pendingWhatsappUrlAfterCash) {
-      alert("No hay pedido pendiente para confirmar en WhatsApp.");
-      return;
-    }
-    openWhatsappUrl(pendingWhatsappUrlAfterCash);
-    resetOrderFormAfterSend();
-    alert("Listo: se abrió WhatsApp con el total para confirmar tu pedido.");
-  });
 }
 
 function selectedDrinksList() {
@@ -474,9 +479,6 @@ function resetOrderFormAfterSend() {
   $("#customer-town") && ($("#customer-town").value = "");
   const wrap = $("#cash-manual-wrap");
   if (wrap) wrap.hidden = true;
-  const waWrap = $("#wa-after-cash-wrap");
-  if (waWrap) waWrap.hidden = true;
-  pendingWhatsappUrlAfterCash = "";
   saveState();
   render();
 }
@@ -505,12 +507,6 @@ function openWhatsappUrl(waUrl) {
   }
 }
 
-function showWhatsappAfterCashAction(waUrl) {
-  pendingWhatsappUrlAfterCash = waUrl;
-  const wrap = $("#wa-after-cash-wrap");
-  if (wrap) wrap.hidden = false;
-}
-
 function submitOrder() {
   const name = $("#customer-name")?.value?.trim() || "";
   const phone = $("#customer-phone")?.value?.trim() || "";
@@ -530,6 +526,9 @@ function submitOrder() {
     return;
   }
   const { wa, total } = payload;
+  const shortDisclaimer = "Revisa datos y total antes de enviar.";
+  const proceed = window.confirm(shortDisclaimer);
+  if (!proceed) return;
 
   if (!state.paymentCashApp) {
     openWhatsappUrl(wa);
@@ -549,8 +548,9 @@ function submitOrder() {
     showCashManualLink(cashUrl);
     alert("No se pudo abrir Cash App automáticamente. Usa el enlace manual.");
   }
-  showWhatsappAfterCashAction(wa);
-  alert("Después de pagar en Cash App, toca 'Confirmar pedido en WhatsApp'.");
+  openWhatsappUrl(wa);
+  resetOrderFormAfterSend();
+  alert("Listo: paga en Cash App y confirma el mensaje de WhatsApp.");
 }
 
 async function init() {

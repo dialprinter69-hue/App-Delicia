@@ -111,6 +111,35 @@ button:active,
   background: linear-gradient(135deg, var(--terracotta-dark) 0%, var(--terracotta) 100%);
 }
 
+.btn-add {
+  position: relative;
+  overflow: visible;
+}
+
+.btn-add.add-feedback {
+  animation: addPulse 280ms ease;
+}
+
+.add-bubble {
+  position: absolute;
+  right: -0.45rem;
+  top: -0.55rem;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.25rem;
+  border-radius: 999px;
+  background: var(--moss);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  animation: bubbleRise 620ms ease forwards;
+  box-shadow: 0 4px 10px rgba(42, 33, 24, 0.22);
+}
+
 .btn-primary:disabled {
   opacity: 0.45;
   cursor: not-allowed;
@@ -390,18 +419,6 @@ input[type="tel"] {
   margin: 0.3rem 0 0;
 }
 
-.wa-after-cash-wrap {
-  margin-top: 0.55rem;
-  padding: 0.65rem 0.75rem;
-  border-radius: 10px;
-  background: rgba(212, 165, 116, 0.12);
-  border: 1px solid rgba(166, 123, 74, 0.28);
-}
-
-#open-wa-after-cash {
-  margin-top: 0.45rem;
-}
-
 .error-banner {
   background: #fde8e4;
   color: var(--terracotta-dark);
@@ -488,5 +505,32 @@ input[type="tel"] {
 
   .menu-card-img {
     min-height: 96px;
+  }
+}
+
+@keyframes addPulse {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes bubbleRise {
+  0% {
+    opacity: 0;
+    transform: translateY(4px) scale(0.85);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-14px) scale(0.96);
   }
 }
