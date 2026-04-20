@@ -18,10 +18,6 @@ const CONFIG = {
   drinkUnitPrice: 2.0,
   deliveryFee: 4.0,
   freeDrinkItemIds: new Set(["dish-papas-supreme"]),
-  /** ms entre abrir Cash App y abrir WhatsApp (modo dos pestañas). */
-  cashAppThenWhatsappGapMs: 750,
-  /** Cuenta atrás antes de ir a WhatsApp en la misma pestaña (modo retraso). */
-  cashAppWhatsappSameTabDelayMs: 3000,
 };
 
 const DRINK_LABELS = ["Coca Cola", "Fanta", "Sprite", "Diet Coke", "Agua"];
@@ -32,8 +28,6 @@ const state = {
   drinks: Object.fromEntries(DRINK_LABELS.map((d) => [d, 0])),
   delivery: false,
   paymentCashApp: false,
-  /** "quick" = Cash App y WhatsApp en pestañas seguidas; "delay" = luego WhatsApp en esta pestaña. */
-  cashAppFlowMode: "quick",
   loadError: null,
 };
 
@@ -120,9 +114,6 @@ function loadState() {
     }
     if (typeof data.delivery === "boolean") state.delivery = data.delivery;
     if (typeof data.paymentCashApp === "boolean") state.paymentCashApp = data.paymentCashApp;
-    if (data.cashAppFlowMode === "quick" || data.cashAppFlowMode === "delay") {
-      state.cashAppFlowMode = data.cashAppFlowMode;
-    }
   } catch {
     /* ignore */
   }
@@ -134,7 +125,6 @@ function saveState() {
     drinks: { ...state.drinks },
     delivery: state.delivery,
     paymentCashApp: state.paymentCashApp,
-    cashAppFlowMode: state.cashAppFlowMode,
   };
   sessionStorage.setItem("delicias_pwa_state", JSON.stringify(data));
 }
@@ -356,12 +346,6 @@ function renderOrder() {
     const manual = $("#cash-manual-wrap");
     if (manual && !isCa) manual.hidden = true;
   }
-  const cq = $("#cashflow-quick");
-  const cd = $("#cashflow-delay");
-  if (cq && cd) {
-    cq.checked = state.cashAppFlowMode === "quick";
-    cd.checked = state.cashAppFlowMode === "delay";
-  }
 }
 
 function render() {
@@ -389,19 +373,6 @@ function setupForm() {
     state.paymentCashApp = true;
     saveState();
     renderOrder();
-  });
-
-  $("#cashflow-quick")?.addEventListener("change", () => {
-    if ($("#cashflow-quick")?.checked) {
-      state.cashAppFlowMode = "quick";
-      saveState();
-    }
-  });
-  $("#cashflow-delay")?.addEventListener("change", () => {
-    if ($("#cashflow-delay")?.checked) {
-      state.cashAppFlowMode = "delay";
-      saveState();
-    }
   });
 
   for (const d of DRINK_LABELS) {
@@ -514,50 +485,6 @@ function openWhatsappUrl(waUrl) {
   if (!w || w.closed) {
     window.location.href = waUrl;
   }
-}
-
-function showWhatsappDelayThenNavigate(waUrl, onLeave) {
-  const overlay = $("#whatsapp-delay-overlay");
-  const countEl = $("#wa-delay-count");
-  const btnNow = $("#wa-delay-now");
-  const btnCancel = $("#wa-delay-cancel");
-  if (!overlay || !countEl || !btnNow || !btnCancel) {
-    window.location.href = waUrl;
-    onLeave();
-    return;
-  }
-
-  const delaySec = Math.max(1, Math.round((CONFIG.cashAppWhatsappSameTabDelayMs || 3000) / 1000));
-  let left = delaySec;
-  countEl.textContent = String(left);
-  overlay.hidden = false;
-
-  let intervalId = null;
-  const go = () => {
-    if (intervalId) clearInterval(intervalId);
-    intervalId = null;
-    overlay.hidden = true;
-    btnNow.onclick = null;
-    btnCancel.onclick = null;
-    onLeave();
-    window.location.href = waUrl;
-  };
-  const cancel = () => {
-    if (intervalId) clearInterval(intervalId);
-    intervalId = null;
-    overlay.hidden = true;
-    btnNow.onclick = null;
-    btnCancel.onclick = null;
-  };
-
-  btnNow.onclick = () => go();
-  btnCancel.onclick = () => cancel();
-
-  intervalId = setInterval(() => {
-    left -= 1;
-    countEl.textContent = String(Math.max(0, left));
-    if (left <= 0) go();
-  }, 1000);
 }
 
 function submitOrder() {

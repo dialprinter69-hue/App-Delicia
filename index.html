@@ -60,20 +60,8 @@
           <label><input type="radio" name="pay" id="pay-cashapp" /> Cash App</label>
         </div>
         <p class="notice" id="pay-cashapp-hint" hidden>
-          Al tocar el botón: 1) se abre Cash App con el total para pagar; 2) luego WhatsApp con tu resumen para enviarlo al restaurante (casi a la vez, o con cuenta atrás si eliges la opción de abajo).
+          Al tocar el botón: 1) se abre Cash App con el total para pagar; 2) al confirmar, se abre WhatsApp con tu resumen para enviarlo al restaurante.
         </p>
-
-        <div id="cash-app-flow-panel" class="cash-app-flow-panel" hidden>
-          <p class="cash-app-flow-title">Después de Cash App, ¿cómo abrir WhatsApp?</p>
-          <label class="cash-app-flow-option">
-            <input type="radio" name="cashflow" id="cashflow-quick" checked />
-            Casi al mismo tiempo: Cash App en una pestaña y WhatsApp en otra (~0,7 s). Recomendado si permites ventanas emergentes.
-          </label>
-          <label class="cash-app-flow-option">
-            <input type="radio" name="cashflow" id="cashflow-delay" />
-            Con retraso: Cash App en una pestaña; luego <strong>esta ventana</strong> irá a WhatsApp en 3 segundos (útil si el navegador bloquea la segunda pestaña).
-          </label>
-        </div>
 
         <div class="field-grid">
           <label>
@@ -100,19 +88,6 @@
         </button>
       </section>
     </main>
-
-    <div id="whatsapp-delay-overlay" class="wa-delay-overlay" hidden aria-live="polite">
-      <div class="wa-delay-dialog">
-        <p>
-          Cash App debería haberse abierto en otra pestaña. Esta ventana irá a WhatsApp con tu pedido en
-          <strong id="wa-delay-count">3</strong> s.
-        </p>
-        <div class="wa-delay-actions">
-          <button type="button" class="btn btn-primary" id="wa-delay-now">Ir a WhatsApp ahora</button>
-          <button type="button" class="btn btn-secondary" id="wa-delay-cancel">Cancelar</button>
-        </div>
-      </div>
-    </div>
 
     <script>
       (function () {
