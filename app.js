@@ -295,12 +295,17 @@ function renderOrder() {
     controls.className = "qty-controls";
     const minus = document.createElement("button");
     minus.type = "button";
+    minus.className = "qty-btn qty-btn-minus";
+    minus.setAttribute("aria-label", `Quitar ${item.name}`);
     minus.textContent = "−";
     minus.addEventListener("click", () => setQty(item.id, qty - 1));
     const num = document.createElement("span");
+    num.className = "qty-value";
     num.textContent = String(qty);
     const plus = document.createElement("button");
     plus.type = "button";
+    plus.className = "qty-btn qty-btn-plus";
+    plus.setAttribute("aria-label", `Agregar ${item.name}`);
     plus.textContent = "+";
     plus.addEventListener("click", () => setQty(item.id, qty + 1));
     controls.append(minus, num, plus);
