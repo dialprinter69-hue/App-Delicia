@@ -571,11 +571,41 @@ function submitOrder() {
   alert("Cash App abierto. Después de pagar, vuelve aquí y toca 'Continuar a WhatsApp'.");
 }
 
+async function loadOrders() {
+  const root = document.getElementById("orders");
+  if (!root) return;
+  try {
+    const res = await fetch("http://localhost:3000/orders", { cache: "no-store" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    if (!Array.isArray(data) || data.length === 0) {
+      root.innerHTML = '<p class="empty-hint">No hay pedidos recibidos.</p>';
+      return;
+    }
+    root.innerHTML = data
+      .map(
+        (o) => `
+        <div class="order-bot-item">
+          <h3>#${o.id ?? "-"}</h3>
+          <p>${o.items ?? ""}</p>
+          <p>${o.status ?? ""}</p>
+        </div>
+      `
+      )
+      .join("");
+  } catch {
+    root.innerHTML =
+      '<p class="empty-hint">No se pudo leer el bot local. Verifica que esté corriendo en localhost:3000.</p>';
+  }
+}
+
 async function init() {
   loadState();
   setupForm();
   await fetchMenu();
   render();
+  loadOrders();
+  setInterval(loadOrders, 3000);
 
   if ("serviceWorker" in navigator) {
     try {

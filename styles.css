@@ -452,6 +452,31 @@ input[type="tel"] {
   font-size: 0.92rem;
 }
 
+.orders-list {
+  margin-top: 0.65rem;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.order-bot-item {
+  border: 1px solid var(--line-soft);
+  border-radius: 10px;
+  background: #fff;
+  padding: 0.65rem 0.75rem;
+}
+
+.order-bot-item h3 {
+  margin: 0 0 0.25rem;
+  font-size: 0.98rem;
+  color: var(--moss);
+}
+
+.order-bot-item p {
+  margin: 0.15rem 0;
+  font-size: 0.88rem;
+  color: var(--ink);
+}
+
 .cash-app-flow-panel {
   margin: 0.75rem 0 1rem;
   padding: 0.75rem 0.85rem;
