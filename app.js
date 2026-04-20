@@ -30,6 +30,7 @@ const state = {
   paymentCashApp: false,
   loadError: null,
 };
+let pendingWhatsappUrlAfterCash = "";
 
 const $ = (sel, root = document) => root.querySelector(sel);
 
@@ -367,6 +368,8 @@ function renderOrder() {
     submitBtn.textContent = isCa ? "Pagar por Cash App y enviar su pedido" : "Confirmar su pedido";
     const manual = $("#cash-manual-wrap");
     if (manual && !isCa) manual.hidden = true;
+    const waLater = $("#wa-after-cash-wrap");
+    if (waLater && !isCa) waLater.hidden = true;
   }
 }
 
@@ -416,6 +419,15 @@ function setupForm() {
   });
 
   $("#submit-order")?.addEventListener("click", submitOrder);
+  $("#open-wa-after-cash")?.addEventListener("click", () => {
+    if (!pendingWhatsappUrlAfterCash) {
+      alert("No hay pedido pendiente para WhatsApp.");
+      return;
+    }
+    openWhatsappUrl(pendingWhatsappUrlAfterCash);
+    resetOrderFormAfterSend();
+    alert("Listo: se abrió WhatsApp para confirmar tu pedido.");
+  });
 }
 
 function selectedDrinksList() {
@@ -481,6 +493,9 @@ function resetOrderFormAfterSend() {
   $("#customer-town") && ($("#customer-town").value = "");
   const wrap = $("#cash-manual-wrap");
   if (wrap) wrap.hidden = true;
+  const waAfterCashWrap = $("#wa-after-cash-wrap");
+  if (waAfterCashWrap) waAfterCashWrap.hidden = true;
+  pendingWhatsappUrlAfterCash = "";
   saveState();
   render();
 }
@@ -549,13 +564,10 @@ function submitOrder() {
     showCashManualLink(cashUrl);
     alert("No se pudo abrir Cash App automáticamente. Usa el enlace manual.");
   }
-  const proceedAfterPay = window.confirm(
-    "Cash App ya se abrió. Después de pagar, toca Aceptar para confirmar tu pedido en WhatsApp."
-  );
-  if (!proceedAfterPay) return;
-  openWhatsappUrl(wa);
-  resetOrderFormAfterSend();
-  alert("Listo: se abrió WhatsApp para confirmar tu pedido.");
+  pendingWhatsappUrlAfterCash = wa;
+  const waAfterCashWrap = $("#wa-after-cash-wrap");
+  if (waAfterCashWrap) waAfterCashWrap.hidden = false;
+  alert("Cash App abierto. Después de pagar, vuelve aquí y toca 'Continuar a WhatsApp'.");
 }
 
 async function init() {
