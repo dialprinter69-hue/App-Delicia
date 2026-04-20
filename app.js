@@ -526,11 +526,10 @@ function submitOrder() {
     return;
   }
   const { wa, total } = payload;
-  const shortDisclaimer = "Revisa datos y total antes de enviar.";
-  const proceed = window.confirm(shortDisclaimer);
-  if (!proceed) return;
 
   if (!state.paymentCashApp) {
+    const proceed = window.confirm("Revisa datos y total antes de enviar.");
+    if (!proceed) return;
     openWhatsappUrl(wa);
     resetOrderFormAfterSend();
     alert("Listo. Envía el mensaje que se abrió para confirmar el pedido.");
@@ -548,9 +547,13 @@ function submitOrder() {
     showCashManualLink(cashUrl);
     alert("No se pudo abrir Cash App automáticamente. Usa el enlace manual.");
   }
+  const proceedAfterPay = window.confirm(
+    "Cuando termines de pagar en Cash App, toca Aceptar para confirmar tu pedido en WhatsApp."
+  );
+  if (!proceedAfterPay) return;
   openWhatsappUrl(wa);
   resetOrderFormAfterSend();
-  alert("Listo: paga en Cash App y confirma el mensaje de WhatsApp.");
+  alert("Listo: se abrió WhatsApp para confirmar tu pedido.");
 }
 
 async function init() {
