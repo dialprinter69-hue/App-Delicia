@@ -31,6 +31,7 @@ const state = {
   loadError: null,
 };
 let pendingWhatsappUrlAfterCash = "";
+const BOT_API_BASE = "http://10.0.0.22:3000";
 
 const $ = (sel, root = document) => root.querySelector(sel);
 
@@ -575,7 +576,7 @@ async function loadOrders() {
   const root = document.getElementById("orders");
   if (!root) return;
   try {
-    const url = `http://10.0.0.22:3000/orders?t=${Date.now()}`;
+    const url = `${BOT_API_BASE}/orders?t=${Date.now()}`;
     const res = await fetch(url, {
       cache: "no-store",
       mode: "cors",
@@ -593,8 +594,13 @@ async function loadOrders() {
         (o) => `
         <div class="order-bot-item">
           <h3>#${o.id ?? "-"}</h3>
-          <p>${o.items ?? ""}</p>
-          <p>${o.status ?? ""}</p>
+          <p>${formatOrderItems(o.items)}</p>
+          <p><strong>Estado:</strong> ${o.status ?? "pendiente"}</p>
+          ${
+            o.status === "listo"
+              ? '<span class="order-ready-chip">✅ Lista</span>'
+              : `<button type="button" class="btn btn-gold btn-order-done" data-order-id="${o.id}">✅ Marcar lista</button>`
+          }
         </div>
       `
       )
@@ -602,6 +608,26 @@ async function loadOrders() {
   } catch {
     root.innerHTML =
       '<p class="empty-hint">No se pudo leer el bot local. Verifica que esté corriendo en localhost:3000.</p>';
+  }
+}
+
+function formatOrderItems(items) {
+  if (!Array.isArray(items) || items.length === 0) return "Sin items";
+  return items.map((it) => `${it.qty || 1}x ${it.name || "item"}`).join(", ");
+}
+
+async function markOrderDone(orderId) {
+  if (!orderId) return;
+  try {
+    const res = await fetch(`${BOT_API_BASE}/done/${encodeURIComponent(orderId)}`, {
+      method: "POST",
+      mode: "cors",
+      headers: { "Content-Type": "application/json" },
+    });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    await loadOrders();
+  } catch {
+    alert("No se pudo marcar la orden como lista.");
   }
 }
 
@@ -616,6 +642,12 @@ function startOrdersPolling() {
   window.addEventListener("focus", () => loadOrders());
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) loadOrders();
+  });
+  document.getElementById("orders")?.addEventListener("click", (event) => {
+    const btn = event.target.closest(".btn-order-done");
+    if (!btn) return;
+    const orderId = btn.getAttribute("data-order-id");
+    markOrderDone(orderId);
   });
 }
 

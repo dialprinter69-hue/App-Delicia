@@ -477,6 +477,24 @@ input[type="tel"] {
   color: var(--ink);
 }
 
+.btn-order-done {
+  margin-top: 0.45rem;
+}
+
+.order-ready-chip {
+  margin-top: 0.45rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #17563a;
+  background: rgba(0, 214, 79, 0.15);
+  border: 1px solid rgba(0, 214, 79, 0.35);
+  border-radius: 999px;
+  padding: 0.25rem 0.55rem;
+}
+
 .cash-app-flow-panel {
   margin: 0.75rem 0 1rem;
   padding: 0.75rem 0.85rem;
