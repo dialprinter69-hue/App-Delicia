@@ -390,6 +390,18 @@ input[type="tel"] {
   margin: 0.3rem 0 0;
 }
 
+.wa-after-cash-wrap {
+  margin-top: 0.55rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 10px;
+  background: rgba(212, 165, 116, 0.12);
+  border: 1px solid rgba(166, 123, 74, 0.28);
+}
+
+#open-wa-after-cash {
+  margin-top: 0.45rem;
+}
+
 .error-banner {
   background: #fde8e4;
   color: var(--terracotta-dark);
