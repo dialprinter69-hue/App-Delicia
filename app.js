@@ -424,7 +424,8 @@ function setupForm() {
       alert("No hay pedido pendiente para WhatsApp.");
       return;
     }
-    openWhatsappUrl(pendingWhatsappUrlAfterCash);
+    // En mobile/PWA esta ruta es mas confiable que abrir nueva pestana.
+    window.location.href = pendingWhatsappUrlAfterCash;
     resetOrderFormAfterSend();
     alert("Listo: se abrió WhatsApp para confirmar tu pedido.");
   });
