@@ -448,17 +448,22 @@ function renderDesserts() {
     const body = document.createElement("div");
     body.className = "menu-card-body";
     const minPrice = Math.min(...sizes.map((s) => s.price));
+    const traySize = sizes.find((s) => String(s.id || "").toLowerCase() === "bandeja");
     body.innerHTML = `
       <h3></h3>
       <p class="desc"></p>
       <div class="menu-card-footer">
-        <span class="price"></span>
+        <span class="price-group">
+          <span class="price"></span>
+          <span class="price-sub"></span>
+        </span>
         <button type="button" class="btn btn-primary btn-add">Pedir</button>
       </div>
     `;
     body.querySelector("h3").textContent = item.name;
     body.querySelector(".desc").textContent = item.description || "";
-    body.querySelector(".price").textContent = `desde $${minPrice.toFixed(2).replace(/\.00$/, "")}`;
+    body.querySelector(".price").textContent = `$${minPrice.toFixed(2).replace(/\.00$/, "")}`;
+    body.querySelector(".price-sub").textContent = traySize ? `Bandejas a $${traySize.price.toFixed(2).replace(/\.00$/, "")}` : "";
     body.querySelector(".btn-add").addEventListener("click", () => openDessertModal({ ...item, sizes }));
 
     card.append(imgWrap, body);

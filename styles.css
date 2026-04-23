@@ -1069,6 +1069,21 @@ input[type="tel"]:focus {
   letter-spacing: 0.02em;
 }
 
+.menu-card.is-dessert .price-group {
+  display: inline-flex;
+  flex-direction: column;
+  line-height: 1.15;
+  gap: 0.2rem;
+}
+
+.menu-card.is-dessert .price-sub {
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--terracotta-dark);
+}
+
 .menu-card.is-dessert .btn-add {
   background: linear-gradient(135deg, var(--gold) 0%, var(--terracotta) 100%);
   color: var(--cream);
