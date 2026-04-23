@@ -179,8 +179,14 @@ function defaultMenu() {
 }
 
 function isDessertItem(item) {
-  if (item && item.category === "dessert") return true;
-  if (item && LEGACY_DESSERT_IDS.has(item.id)) return true;
+  if (!item || typeof item !== "object") return false;
+  if (LEGACY_DESSERT_IDS.has(item.id)) return true;
+  const id = String(item.id || "").trim().toLowerCase();
+  if (id.startsWith("dessert-")) return true;
+  const cat = String(item.category ?? "")
+    .trim()
+    .toLowerCase();
+  if (cat === "dessert" || cat === "desserts" || cat === "postre" || cat === "postres") return true;
   return false;
 }
 
@@ -229,8 +235,17 @@ async function fetchMenu() {
     const list = await res.json();
     if (!Array.isArray(list) || list.length === 0) throw new Error("Menú vacío");
     const { mains, desserts } = splitMenuAndDesserts(list);
-    state.menu = mains.length > 0 ? mains : defaultMenu();
-    state.desserts = desserts;
+    const mainsOnly = [];
+    const dessertsAll = desserts.slice();
+    for (const item of mains) {
+      if (isDessertItem(item)) {
+        dessertsAll.push({ ...item, sizes: normalizeDessertSizes(item) });
+      } else {
+        mainsOnly.push(item);
+      }
+    }
+    state.menu = mainsOnly.length > 0 ? mainsOnly : defaultMenu();
+    state.desserts = dessertsAll;
   } catch (e) {
     state.loadError = "No se pudo cargar el menú en línea. Mostrando respaldo o última copia.";
     if (state.menu.length === 0) state.menu = defaultMenu();
@@ -380,12 +395,15 @@ function renderDesserts() {
   const list = $("#desserts-list");
   if (!section || !list) return;
 
+  section.hidden = false;
+  section.removeAttribute("hidden");
+  list.innerHTML = "";
+
   if (!state.desserts || state.desserts.length === 0) {
-    section.hidden = true;
+    list.innerHTML =
+      '<p class="empty-hint">No hay postres en el menú en este momento. Toca «Actualizar menú» o vuelve a intentar más tarde.</p>';
     return;
   }
-  section.hidden = false;
-  list.innerHTML = "";
 
   for (const item of state.desserts) {
     const card = document.createElement("article");
