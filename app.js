@@ -21,6 +21,11 @@ const CONFIG = {
 };
 
 const DRINK_LABELS = ["Coca Cola", "Fanta", "Sprite", "Diet Coke", "Agua"];
+const QUICK_DESSERT = {
+  id: "quick-tres-leches",
+  name: "Tres Leches (individual)",
+  price: 5,
+};
 
 /** Defaults para postres si vienen sin `sizes` en menu.json. */
 const DEFAULT_DESSERT_SIZES = [
@@ -37,6 +42,7 @@ const state = {
   cart: new Map(),
   dessertOrders: [], // Pedidos de postres: {catalogId, sizeId, sizeLabel, unitPrice, qty, orderDate, notes, nameSnapshot}
   drinks: Object.fromEntries(DRINK_LABELS.map((d) => [d, 0])),
+  quickDesserts: { [QUICK_DESSERT.id]: 0 },
   delivery: false,
   paymentCashApp: false,
   loadError: null,
@@ -149,6 +155,10 @@ function loadState() {
         if (typeof data.drinks[d] === "number") state.drinks[d] = data.drinks[d];
       }
     }
+    if (data.quickDesserts && typeof data.quickDesserts === "object") {
+      const q = Number(data.quickDesserts[QUICK_DESSERT.id]);
+      state.quickDesserts[QUICK_DESSERT.id] = Number.isFinite(q) ? Math.max(0, q) : 0;
+    }
     if (typeof data.delivery === "boolean") state.delivery = data.delivery;
     if (typeof data.paymentCashApp === "boolean") state.paymentCashApp = data.paymentCashApp;
   } catch {
@@ -161,6 +171,7 @@ function saveState() {
     cart: Object.fromEntries(state.cart),
     dessertOrders: state.dessertOrders,
     drinks: { ...state.drinks },
+    quickDesserts: { ...state.quickDesserts },
     delivery: state.delivery,
     paymentCashApp: state.paymentCashApp,
   };
@@ -285,12 +296,30 @@ function calculateDrinksTotal() {
   return CONFIG.drinkUnitPrice * billable;
 }
 
+function quickDessertQty() {
+  return Math.max(0, Number(state.quickDesserts[QUICK_DESSERT.id]) || 0);
+}
+
+function calculateQuickDessertsTotal() {
+  return quickDessertQty() * QUICK_DESSERT.price;
+}
+
+function quickDessertsCount() {
+  return quickDessertQty();
+}
+
 function calculateDeliveryFee() {
   return state.delivery ? CONFIG.deliveryFee : 0;
 }
 
 function calculateOrderTotal() {
-  return calculateCartTotal() + calculateDrinksTotal() + calculateDeliveryFee() + calculateDessertsTotal();
+  return (
+    calculateCartTotal() +
+    calculateDrinksTotal() +
+    calculateDeliveryFee() +
+    calculateDessertsTotal() +
+    calculateQuickDessertsTotal()
+  );
 }
 
 function cartCount() {
@@ -829,18 +858,20 @@ function renderOrder() {
 
   const count = cartCount();
   const dCount = dessertOrdersCount();
+  const qdCount = quickDessertsCount();
   const total = calculateOrderTotal();
-  if (count === 0 && dCount === 0) {
+  if (count === 0 && dCount === 0 && qdCount === 0) {
     summaryEl.textContent = "Agrega platos o postres al pedido desde el menú.";
   } else {
     const parts = [];
     if (count) parts.push(`${count} plato(s)`);
     if (dCount) parts.push(`${dCount} postre(s)`);
+    if (qdCount) parts.push(`${qdCount} tres leches`);
     summaryEl.textContent = `${parts.join(" · ")} · Total: $${total.toFixed(2)}`;
   }
 
   const submitOrderBtn = $("#submit-order");
-  if (submitOrderBtn) submitOrderBtn.disabled = count === 0 && dCount === 0;
+  if (submitOrderBtn) submitOrderBtn.disabled = count === 0 && dCount === 0 && qdCount === 0;
 
   const delSwitch = $("#delivery-switch");
   if (delSwitch) delSwitch.checked = state.delivery;
@@ -853,6 +884,8 @@ function renderOrder() {
     const el = document.querySelector(`[data-drink-qty="${escapeAttrSelector(d)}"]`);
     if (el) el.textContent = String(state.drinks[d] || 0);
   }
+  const quickQtyEl = document.querySelector(`[data-quick-dessert-qty="${escapeAttrSelector(QUICK_DESSERT.id)}"]`);
+  if (quickQtyEl) quickQtyEl.textContent = String(quickDessertQty());
 
   const payHint = $("#pay-cashapp-hint");
   const cashAppPreDisclaimer = $("#cashapp-pre-disclaimer");
@@ -909,6 +942,20 @@ function setupForm() {
       renderOrder();
     });
   }
+  document
+    .querySelector(`[data-quick-dessert-plus="${escapeAttrSelector(QUICK_DESSERT.id)}"]`)
+    ?.addEventListener("click", () => {
+      state.quickDesserts[QUICK_DESSERT.id] = quickDessertQty() + 1;
+      saveState();
+      renderOrder();
+    });
+  document
+    .querySelector(`[data-quick-dessert-minus="${escapeAttrSelector(QUICK_DESSERT.id)}"]`)
+    ?.addEventListener("click", () => {
+      state.quickDesserts[QUICK_DESSERT.id] = Math.max(0, quickDessertQty() - 1);
+      saveState();
+      renderOrder();
+    });
 
   $("#btn-refresh-menu")?.addEventListener("click", async () => {
     await fetchMenu();
@@ -992,10 +1039,17 @@ function buildOrderWhatsappPayload(name, phone, town) {
       if (entry.notes) text += `   📝 ${entry.notes}\n`;
     }
   }
+  const quickQty = quickDessertQty();
+  if (quickQty > 0) {
+    text += "--- Postres al momento ---\n";
+    text += `${quickQty}× ${QUICK_DESSERT.name} @ $${QUICK_DESSERT.price.toFixed(2)} = $${(quickQty * QUICK_DESSERT.price).toFixed(2)}\n`;
+  }
   const drinksTotal = calculateDrinksTotal();
   if (drinks.length) text += `Total bebidas: $${drinksTotal.toFixed(2)}\n`;
   const dessertsTotal = calculateDessertsTotal();
   if (dessertsTotal > 0) text += `Total postres: $${dessertsTotal.toFixed(2)}\n`;
+  const quickDessertsTotal = calculateQuickDessertsTotal();
+  if (quickDessertsTotal > 0) text += `Total postres al momento: $${quickDessertsTotal.toFixed(2)}\n`;
   const delFee = calculateDeliveryFee();
   if (delFee > 0) text += `Cargo delivery: $${delFee.toFixed(2)}\n`;
   const total = calculateOrderTotal();
@@ -1012,6 +1066,7 @@ function resetOrderFormAfterSend() {
   state.cart = new Map();
   state.dessertOrders = [];
   for (const d of DRINK_LABELS) state.drinks[d] = 0;
+  state.quickDesserts[QUICK_DESSERT.id] = 0;
   state.delivery = false;
   state.paymentCashApp = false;
   $("#customer-name") && ($("#customer-name").value = "");
@@ -1058,7 +1113,7 @@ function submitOrder() {
     alert("Completa nombre, teléfono y pueblo.");
     return;
   }
-  if (cartCount() === 0 && dessertOrdersCount() === 0) {
+  if (cartCount() === 0 && dessertOrdersCount() === 0 && quickDessertsCount() === 0) {
     alert("Agrega al menos un plato o postre al pedido.");
     return;
   }
