@@ -892,12 +892,15 @@ input[type="tel"] {
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   opacity: 0;
+  /* Sin .show el modal sigue ocupando toda la pantalla: opacity:0 NO desactiva clics. */
+  pointer-events: none;
   transition: opacity 0.22s ease;
   overflow-y: auto;
 }
 
 .modal.show {
   opacity: 1;
+  pointer-events: auto;
 }
 
 .modal-card {

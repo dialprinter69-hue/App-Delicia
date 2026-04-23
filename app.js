@@ -42,6 +42,7 @@ const state = {
   loadError: null,
 };
 let pendingWhatsappUrlAfterCash = "";
+let dessertModalCloseTimer = null;
 const BOT_API_BASE = "http://10.0.0.22:3000";
 const BOT_API_TOKEN = "delicia-change-this-token";
 const ORDERS_ADMIN_PARAM = "admin";
@@ -406,6 +407,7 @@ function renderDesserts() {
   }
 
   for (const item of state.desserts) {
+    const sizes = Array.isArray(item.sizes) && item.sizes.length > 0 ? item.sizes : normalizeDessertSizes(item);
     const card = document.createElement("article");
     card.className = "menu-card is-dessert";
     const emoji = dessertEmojiFor(item);
@@ -445,7 +447,7 @@ function renderDesserts() {
 
     const body = document.createElement("div");
     body.className = "menu-card-body";
-    const minPrice = Math.min(...item.sizes.map((s) => s.price));
+    const minPrice = Math.min(...sizes.map((s) => s.price));
     body.innerHTML = `
       <h3></h3>
       <p class="desc"></p>
@@ -457,7 +459,7 @@ function renderDesserts() {
     body.querySelector("h3").textContent = item.name;
     body.querySelector(".desc").textContent = item.description || "";
     body.querySelector(".price").textContent = `desde $${minPrice.toFixed(2).replace(/\.00$/, "")}`;
-    body.querySelector(".btn-add").addEventListener("click", () => openDessertModal(item));
+    body.querySelector(".btn-add").addEventListener("click", () => openDessertModal({ ...item, sizes }));
 
     card.append(imgWrap, body);
     list.appendChild(card);
@@ -484,6 +486,14 @@ function formatFriendlyDate(iso) {
 }
 
 function openDessertModal(item, existingEntryIndex = -1) {
+  if (!item || !Array.isArray(item.sizes) || item.sizes.length === 0) {
+    alert("Este postre no tiene opciones de tamaño disponibles.");
+    return;
+  }
+  if (dessertModalCloseTimer) {
+    clearTimeout(dessertModalCloseTimer);
+    dessertModalCloseTimer = null;
+  }
   const existing = existingEntryIndex >= 0 ? state.dessertOrders[existingEntryIndex] : null;
   pendingDessert = { item, existingEntryIndex };
 
@@ -528,12 +538,34 @@ function openDessertModal(item, existingEntryIndex = -1) {
 function closeDessertModal() {
   const modal = $("#dessert-modal");
   if (!modal) return;
+  if (dessertModalCloseTimer) {
+    clearTimeout(dessertModalCloseTimer);
+    dessertModalCloseTimer = null;
+  }
   modal.classList.remove("show");
   modal.setAttribute("aria-hidden", "true");
-  setTimeout(() => {
+  dessertModalCloseTimer = setTimeout(() => {
+    dessertModalCloseTimer = null;
     modal.hidden = true;
     document.body.style.overflow = "";
   }, 220);
+  pendingDessert = null;
+  pendingSizeId = null;
+}
+
+/** Evita capa invisible del modal (p. ej. tras recargar la PWA o carrera abrir/cerrar). */
+function resetDessertModalUi() {
+  if (dessertModalCloseTimer) {
+    clearTimeout(dessertModalCloseTimer);
+    dessertModalCloseTimer = null;
+  }
+  const modal = $("#dessert-modal");
+  if (modal) {
+    modal.classList.remove("show");
+    modal.hidden = true;
+    modal.setAttribute("aria-hidden", "true");
+  }
+  document.body.style.overflow = "";
   pendingDessert = null;
   pendingSizeId = null;
 }
@@ -1154,6 +1186,7 @@ function startOrdersPolling() {
 
 async function init() {
   loadState();
+  resetDessertModalUi();
   setupForm();
   await fetchMenu();
   render();
