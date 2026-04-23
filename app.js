@@ -492,7 +492,7 @@ function renderDesserts() {
     body.querySelector("h3").textContent = item.name;
     body.querySelector(".desc").textContent = item.description || "";
     body.querySelector(".price").textContent = `$${minPrice.toFixed(2).replace(/\.00$/, "")}`;
-    body.querySelector(".price-sub").textContent = traySize ? `Bandeja disp. $${traySize.price.toFixed(2).replace(/\.00$/, "")}` : "";
+    body.querySelector(".price-sub").textContent = traySize ? `Bandeja $${traySize.price.toFixed(2).replace(/\.00$/, "")}` : "";
     body.querySelector(".btn-add").addEventListener("click", () => openDessertModal({ ...item, sizes }));
 
     card.append(imgWrap, body);
