@@ -100,12 +100,29 @@ function resolveMenuImageCandidates(item) {
   return [];
 }
 
-function makeMenuImagePlaceholder() {
+function makeMenuImagePlaceholder(options = {}) {
   const el = document.createElement("div");
-  el.className = "menu-card-img";
+  el.className = "menu-card-img menu-card-img-placeholder";
   el.setAttribute("role", "presentation");
-  el.style.background = "linear-gradient(145deg,#1E3D2F,#2D5A45)";
+  if (options.dessert) {
+    el.classList.add("is-dessert-placeholder");
+    const emoji = options.emoji || "🍮";
+    el.innerHTML = `<span class="placeholder-emoji" aria-hidden="true">${emoji}</span>`;
+  } else {
+    el.style.background = "linear-gradient(145deg,#1E3D2F,#2D5A45)";
+  }
   return el;
+}
+
+/** Escoge el emoji adecuado según el nombre del postre. */
+function dessertEmojiFor(item) {
+  const n = String(item && item.name || "").toLowerCase();
+  if (n.includes("tres leche")) return "🥛";
+  if (n.includes("flan")) return "🍮";
+  if (n.includes("cheesecake") || n.includes("queso")) return "🍰";
+  if (n.includes("brownie") || n.includes("chocolate")) return "🍫";
+  if (n.includes("helado") || n.includes("nieve")) return "🍨";
+  return "🍰";
 }
 
 function parsePriceToDouble(raw) {
@@ -373,6 +390,7 @@ function renderDesserts() {
   for (const item of state.desserts) {
     const card = document.createElement("article");
     card.className = "menu-card is-dessert";
+    const emoji = dessertEmojiFor(item);
     const candidates = resolveMenuImageCandidates(item);
     const imgWrap = document.createElement("div");
     imgWrap.className = "menu-card-img-wrap";
@@ -392,13 +410,13 @@ function renderDesserts() {
           el.src = candidates[i];
         } else {
           el.removeEventListener("error", onImgErr);
-          el.replaceWith(makeMenuImagePlaceholder());
+          el.replaceWith(makeMenuImagePlaceholder({ dessert: true, emoji }));
         }
       });
       el.src = candidates[0];
       img = el;
     } else {
-      img = makeMenuImagePlaceholder();
+      img = makeMenuImagePlaceholder({ dessert: true, emoji });
     }
 
     const badge = document.createElement("span");
