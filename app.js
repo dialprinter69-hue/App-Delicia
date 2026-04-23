@@ -22,9 +22,20 @@ const CONFIG = {
 
 const DRINK_LABELS = ["Coca Cola", "Fanta", "Sprite", "Diet Coke", "Agua"];
 
+/** Defaults para postres si vienen sin `sizes` en menu.json. */
+const DEFAULT_DESSERT_SIZES = [
+  { id: "individual", label: "Porción individual", desc: "Para 1 persona", price: 5 },
+  { id: "bandeja", label: "Bandeja", desc: "Para compartir (8–10 porciones)", price: 25, badge: "Familiar" },
+];
+
+/** IDs legados que deben tratarse como postres aunque no tengan `category`. */
+const LEGACY_DESSERT_IDS = new Set(["dish-tres-leches"]);
+
 const state = {
-  menu: [],
+  menu: [],          // Solo platos principales (category !== "dessert")
+  desserts: [],      // Catálogo de postres desde menu.json
   cart: new Map(),
+  dessertOrders: [], // Pedidos de postres: {catalogId, sizeId, sizeLabel, unitPrice, qty, orderDate, notes, nameSnapshot}
   drinks: Object.fromEntries(DRINK_LABELS.map((d) => [d, 0])),
   delivery: false,
   paymentCashApp: false,
@@ -112,6 +123,9 @@ function loadState() {
     if (data.cart && typeof data.cart === "object") {
       state.cart = new Map(Object.entries(data.cart).map(([k, v]) => [k, Number(v) || 0]));
     }
+    if (Array.isArray(data.dessertOrders)) {
+      state.dessertOrders = data.dessertOrders.filter((d) => d && typeof d === "object");
+    }
     if (data.drinks && typeof data.drinks === "object") {
       for (const d of DRINK_LABELS) {
         if (typeof data.drinks[d] === "number") state.drinks[d] = data.drinks[d];
@@ -127,6 +141,7 @@ function loadState() {
 function saveState() {
   const data = {
     cart: Object.fromEntries(state.cart),
+    dessertOrders: state.dessertOrders,
     drinks: { ...state.drinks },
     delivery: state.delivery,
     paymentCashApp: state.paymentCashApp,
@@ -146,11 +161,49 @@ function defaultMenu() {
   ];
 }
 
+function isDessertItem(item) {
+  if (item && item.category === "dessert") return true;
+  if (item && LEGACY_DESSERT_IDS.has(item.id)) return true;
+  return false;
+}
+
+function normalizeDessertSizes(item) {
+  const raw = Array.isArray(item.sizes) ? item.sizes : [];
+  if (raw.length === 0) {
+    const base = parsePriceToDouble(item.price) || 5;
+    return [
+      { id: "individual", label: "Porción individual", desc: "Para 1 persona", price: base },
+      { id: "bandeja", label: "Bandeja", desc: "Para compartir (8–10 porciones)", price: 25, badge: "Familiar" },
+    ];
+  }
+  return raw.map((s) => ({
+    id: s.id || "size",
+    label: s.label || "Tamaño",
+    desc: s.desc || "",
+    price: parsePriceToDouble(s.price),
+    badge: s.badge || null,
+  }));
+}
+
+function splitMenuAndDesserts(list) {
+  const mains = [];
+  const desserts = [];
+  for (const item of list) {
+    if (isDessertItem(item)) {
+      desserts.push({ ...item, sizes: normalizeDessertSizes(item) });
+    } else {
+      mains.push(item);
+    }
+  }
+  return { mains, desserts };
+}
+
 async function fetchMenu() {
   state.loadError = null;
   const url = CONFIG.remoteMenuJsonUrl.trim();
   if (!url) {
     state.menu = defaultMenu();
+    state.desserts = [];
     return;
   }
   try {
@@ -158,7 +211,9 @@ async function fetchMenu() {
     if (!res.ok) throw new Error("HTTP " + res.status);
     const list = await res.json();
     if (!Array.isArray(list) || list.length === 0) throw new Error("Menú vacío");
-    state.menu = list;
+    const { mains, desserts } = splitMenuAndDesserts(list);
+    state.menu = mains.length > 0 ? mains : defaultMenu();
+    state.desserts = desserts;
   } catch (e) {
     state.loadError = "No se pudo cargar el menú en línea. Mostrando respaldo o última copia.";
     if (state.menu.length === 0) state.menu = defaultMenu();
@@ -202,7 +257,7 @@ function calculateDeliveryFee() {
 }
 
 function calculateOrderTotal() {
-  return calculateCartTotal() + calculateDrinksTotal() + calculateDeliveryFee();
+  return calculateCartTotal() + calculateDrinksTotal() + calculateDeliveryFee() + calculateDessertsTotal();
 }
 
 function cartCount() {
@@ -299,6 +354,362 @@ function renderMenu() {
   }
 }
 
+/* =========================
+   POSTRES
+========================= */
+
+function renderDesserts() {
+  const section = $("#desserts-section");
+  const list = $("#desserts-list");
+  if (!section || !list) return;
+
+  if (!state.desserts || state.desserts.length === 0) {
+    section.hidden = true;
+    return;
+  }
+  section.hidden = false;
+  list.innerHTML = "";
+
+  for (const item of state.desserts) {
+    const card = document.createElement("article");
+    card.className = "menu-card is-dessert";
+    const candidates = resolveMenuImageCandidates(item);
+    const imgWrap = document.createElement("div");
+    imgWrap.className = "menu-card-img-wrap";
+
+    let img;
+    if (candidates.length > 0) {
+      const el = document.createElement("img");
+      el.className = "menu-card-img";
+      el.alt = item.name || "";
+      el.loading = "lazy";
+      el.decoding = "async";
+      el.referrerPolicy = "no-referrer";
+      let i = 0;
+      el.addEventListener("error", function onImgErr() {
+        i += 1;
+        if (i < candidates.length) {
+          el.src = candidates[i];
+        } else {
+          el.removeEventListener("error", onImgErr);
+          el.replaceWith(makeMenuImagePlaceholder());
+        }
+      });
+      el.src = candidates[0];
+      img = el;
+    } else {
+      img = makeMenuImagePlaceholder();
+    }
+
+    const badge = document.createElement("span");
+    badge.className = "menu-badge";
+    badge.textContent = "Pre-orden";
+
+    imgWrap.append(img, badge);
+
+    const body = document.createElement("div");
+    body.className = "menu-card-body";
+    const minPrice = Math.min(...item.sizes.map((s) => s.price));
+    body.innerHTML = `
+      <h3></h3>
+      <p class="desc"></p>
+      <div class="menu-card-footer">
+        <span class="price"></span>
+        <button type="button" class="btn btn-primary btn-add">Pedir</button>
+      </div>
+    `;
+    body.querySelector("h3").textContent = item.name;
+    body.querySelector(".desc").textContent = item.description || "";
+    body.querySelector(".price").textContent = `desde $${minPrice.toFixed(2).replace(/\.00$/, "")}`;
+    body.querySelector(".btn-add").addEventListener("click", () => openDessertModal(item));
+
+    card.append(imgWrap, body);
+    list.appendChild(card);
+  }
+}
+
+/* ----- Modal state & helpers ----- */
+let pendingDessert = null;
+let pendingSizeId = null;
+
+function toISODate(d) {
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function formatFriendlyDate(iso) {
+  if (!iso) return "";
+  const [y, m, d] = String(iso).split("-").map(Number);
+  if (!y || !m || !d) return iso;
+  const date = new Date(y, m - 1, d);
+  return date.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" });
+}
+
+function openDessertModal(item, existingEntryIndex = -1) {
+  const existing = existingEntryIndex >= 0 ? state.dessertOrders[existingEntryIndex] : null;
+  pendingDessert = { item, existingEntryIndex };
+
+  const modal = $("#dessert-modal");
+  const dateInput = $("#dessert-date");
+  const notesInput = $("#dessert-notes");
+  const title = $("#dessert-modal-title");
+  const subtitle = $("#dessert-modal-subtitle");
+  if (!modal || !dateInput || !notesInput) return;
+
+  const today = new Date();
+  const minDate = new Date();
+  minDate.setDate(today.getDate() + 1);
+  const maxDate = new Date();
+  maxDate.setDate(today.getDate() + 30);
+  dateInput.min = toISODate(minDate);
+  dateInput.max = toISODate(maxDate);
+
+  if (existing) {
+    title.textContent = `Editar ${item.name}`;
+    subtitle.textContent = `Ajusta tamaño, fecha o notas.`;
+    dateInput.value = existing.orderDate || toISODate(minDate);
+    notesInput.value = existing.notes || "";
+    pendingSizeId = existing.sizeId || item.sizes[0].id;
+  } else {
+    title.textContent = item.name;
+    subtitle.textContent = `Elige tamaño y cuándo lo quieres recibir.`;
+    dateInput.value = toISODate(minDate);
+    notesInput.value = "";
+    pendingSizeId = item.sizes[0].id;
+  }
+
+  renderSizeOptions(item);
+  renderQuickDates(dateInput.value);
+
+  modal.hidden = false;
+  modal.setAttribute("aria-hidden", "false");
+  requestAnimationFrame(() => modal.classList.add("show"));
+  document.body.style.overflow = "hidden";
+}
+
+function closeDessertModal() {
+  const modal = $("#dessert-modal");
+  if (!modal) return;
+  modal.classList.remove("show");
+  modal.setAttribute("aria-hidden", "true");
+  setTimeout(() => {
+    modal.hidden = true;
+    document.body.style.overflow = "";
+  }, 220);
+  pendingDessert = null;
+  pendingSizeId = null;
+}
+
+function renderSizeOptions(item) {
+  const container = $("#dessert-sizes");
+  if (!container) return;
+  container.innerHTML = "";
+  for (const size of item.sizes) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "size-option" + (size.id === pendingSizeId ? " active" : "");
+    btn.innerHTML = `
+      <div class="size-option-info">
+        <span class="size-option-label"></span>
+        <span class="size-option-desc"></span>
+      </div>
+      <span class="size-option-price"></span>
+    `;
+    const labelEl = btn.querySelector(".size-option-label");
+    labelEl.textContent = size.label;
+    if (size.badge) {
+      const b = document.createElement("span");
+      b.className = "size-option-badge";
+      b.textContent = size.badge;
+      labelEl.appendChild(b);
+    }
+    btn.querySelector(".size-option-desc").textContent = size.desc || "";
+    btn.querySelector(".size-option-price").textContent = `$${size.price.toFixed(2).replace(/\.00$/, "")}`;
+    btn.addEventListener("click", () => {
+      pendingSizeId = size.id;
+      renderSizeOptions(item);
+    });
+    container.appendChild(btn);
+  }
+}
+
+function renderQuickDates(selectedIso) {
+  const container = $("#dessert-quick-dates");
+  if (!container) return;
+  container.innerHTML = "";
+  const base = new Date();
+  const offsets = [1, 2, 3, 7];
+  const labels = ["Mañana", "Pasado mañana", "En 3 días", "En 1 semana"];
+  offsets.forEach((offset, i) => {
+    const d = new Date();
+    d.setDate(base.getDate() + offset);
+    const iso = toISODate(d);
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "quick-chip" + (iso === selectedIso ? " active" : "");
+    chip.textContent = labels[i];
+    chip.addEventListener("click", () => {
+      const input = $("#dessert-date");
+      if (input) input.value = iso;
+      renderQuickDates(iso);
+    });
+    container.appendChild(chip);
+  });
+}
+
+function confirmDessert() {
+  if (!pendingDessert) return;
+  const dateInput = $("#dessert-date");
+  const notesInput = $("#dessert-notes");
+  if (!dateInput || !notesInput) return;
+  const orderDate = dateInput.value;
+  const notes = notesInput.value.trim();
+  if (!orderDate) {
+    alert("Por favor elige una fecha.");
+    return;
+  }
+
+  const { item, existingEntryIndex } = pendingDessert;
+  const size = item.sizes.find((s) => s.id === pendingSizeId) || item.sizes[0];
+
+  const entry = {
+    catalogId: item.id,
+    nameSnapshot: item.name,
+    sizeId: size.id,
+    sizeLabel: size.label,
+    unitPrice: size.price,
+    qty: 1,
+    orderDate,
+    notes,
+  };
+
+  if (existingEntryIndex >= 0) {
+    entry.qty = state.dessertOrders[existingEntryIndex].qty || 1;
+    state.dessertOrders[existingEntryIndex] = entry;
+  } else {
+    /* Si coincide catalog+size+date+notes, incrementa qty. */
+    const dup = state.dessertOrders.findIndex(
+      (d) => d.catalogId === entry.catalogId && d.sizeId === entry.sizeId && d.orderDate === entry.orderDate && (d.notes || "") === (entry.notes || "")
+    );
+    if (dup >= 0) {
+      state.dessertOrders[dup].qty = (state.dessertOrders[dup].qty || 1) + 1;
+    } else {
+      state.dessertOrders.push(entry);
+    }
+  }
+
+  saveState();
+  closeDessertModal();
+  render();
+}
+
+function changeDessertQty(index, delta) {
+  const entry = state.dessertOrders[index];
+  if (!entry) return;
+  entry.qty = (entry.qty || 1) + delta;
+  if (entry.qty <= 0) state.dessertOrders.splice(index, 1);
+  saveState();
+  renderOrder();
+}
+
+function editDessertEntry(index) {
+  const entry = state.dessertOrders[index];
+  if (!entry) return;
+  const catalogItem = state.desserts.find((d) => d.id === entry.catalogId);
+  if (!catalogItem) {
+    alert("Este postre ya no está disponible en el menú.");
+    return;
+  }
+  openDessertModal(catalogItem, index);
+}
+
+function renderDessertOrders() {
+  const wrap = $("#dessert-orders-wrap");
+  const linesEl = $("#dessert-order-lines");
+  if (!wrap || !linesEl) return;
+  linesEl.innerHTML = "";
+
+  if (!state.dessertOrders || state.dessertOrders.length === 0) {
+    wrap.hidden = true;
+    return;
+  }
+  wrap.hidden = false;
+
+  state.dessertOrders.forEach((entry, index) => {
+    const qty = entry.qty || 1;
+    const li = document.createElement("li");
+
+    const left = document.createElement("span");
+    left.textContent = `${qty}× ${entry.nameSnapshot}`;
+
+    const controls = document.createElement("div");
+    controls.className = "qty-controls";
+
+    const minus = document.createElement("button");
+    minus.type = "button";
+    minus.className = "qty-btn qty-btn-minus";
+    minus.setAttribute("aria-label", `Quitar ${entry.nameSnapshot}`);
+    minus.textContent = "−";
+    minus.addEventListener("click", () => changeDessertQty(index, -1));
+
+    const num = document.createElement("span");
+    num.className = "qty-value";
+    num.textContent = String(qty);
+
+    const plus = document.createElement("button");
+    plus.type = "button";
+    plus.className = "qty-btn qty-btn-plus";
+    plus.setAttribute("aria-label", `Agregar ${entry.nameSnapshot}`);
+    plus.textContent = "+";
+    plus.addEventListener("click", () => changeDessertQty(index, +1));
+
+    controls.append(minus, num, plus);
+
+    const meta = document.createElement("div");
+    meta.className = "dessert-meta";
+
+    const sizeChip = document.createElement("span");
+    sizeChip.className = "dessert-chip dessert-chip-variant";
+    sizeChip.textContent = entry.sizeLabel || "";
+    meta.appendChild(sizeChip);
+
+    const dateChip = document.createElement("button");
+    dateChip.type = "button";
+    dateChip.className = "dessert-chip is-clickable";
+    dateChip.title = "Editar tamaño o fecha";
+    dateChip.innerHTML = `📅 <span></span>`;
+    dateChip.querySelector("span").textContent = formatFriendlyDate(entry.orderDate);
+    dateChip.addEventListener("click", () => editDessertEntry(index));
+    meta.appendChild(dateChip);
+
+    if (entry.notes) {
+      const notesChip = document.createElement("span");
+      notesChip.className = "dessert-chip";
+      notesChip.textContent = `📝 ${entry.notes}`;
+      meta.appendChild(notesChip);
+    }
+
+    li.append(left, controls, meta);
+    linesEl.appendChild(li);
+  });
+}
+
+function calculateDessertsTotal() {
+  let sum = 0;
+  for (const entry of state.dessertOrders) {
+    sum += (entry.unitPrice || 0) * (entry.qty || 0);
+  }
+  return sum;
+}
+
+function dessertOrdersCount() {
+  let n = 0;
+  for (const entry of state.dessertOrders) n += entry.qty || 0;
+  return n;
+}
+
 function renderOrder() {
   const linesEl = $("#order-lines");
   const summaryEl = $("#order-summary");
@@ -335,20 +746,28 @@ function renderOrder() {
     linesEl.appendChild(li);
   }
 
-  if (linesEl.children.length === 0) {
-    linesEl.innerHTML = '<li class="empty-hint">Agrega platos al pedido desde el menú.</li>';
+  renderDessertOrders();
+
+  if (linesEl.children.length === 0 && state.dessertOrders.length === 0) {
+    linesEl.innerHTML = '<li class="empty-hint">Agrega platos o postres al pedido desde el menú.</li>';
+  } else if (linesEl.children.length === 0) {
+    linesEl.innerHTML = '<li class="empty-hint">Sin platos (solo postres).</li>';
   }
 
   const count = cartCount();
+  const dCount = dessertOrdersCount();
   const total = calculateOrderTotal();
-  if (count === 0) {
-    summaryEl.textContent = "Agrega platos al pedido desde el menú.";
+  if (count === 0 && dCount === 0) {
+    summaryEl.textContent = "Agrega platos o postres al pedido desde el menú.";
   } else {
-    summaryEl.textContent = `${count} plato(s) en el pedido · Total: $${total.toFixed(2)}`;
+    const parts = [];
+    if (count) parts.push(`${count} plato(s)`);
+    if (dCount) parts.push(`${dCount} postre(s)`);
+    summaryEl.textContent = `${parts.join(" · ")} · Total: $${total.toFixed(2)}`;
   }
 
   const submitOrderBtn = $("#submit-order");
-  if (submitOrderBtn) submitOrderBtn.disabled = count === 0;
+  if (submitOrderBtn) submitOrderBtn.disabled = count === 0 && dCount === 0;
 
   const delSwitch = $("#delivery-switch");
   if (delSwitch) delSwitch.checked = state.delivery;
@@ -384,6 +803,7 @@ function render() {
     err.textContent = state.loadError || "";
   }
   renderMenu();
+  renderDesserts();
   renderOrder();
 }
 
@@ -420,6 +840,19 @@ function setupForm() {
   $("#btn-refresh-menu")?.addEventListener("click", async () => {
     await fetchMenu();
     render();
+  });
+
+  /* Dessert modal wiring */
+  $("#dessert-modal-close")?.addEventListener("click", closeDessertModal);
+  $("#dessert-modal-cancel")?.addEventListener("click", closeDessertModal);
+  $("#dessert-modal-confirm")?.addEventListener("click", confirmDessert);
+  $("#dessert-modal")?.addEventListener("click", (e) => {
+    if (e.target && e.target.id === "dessert-modal") closeDessertModal();
+  });
+  $("#dessert-date")?.addEventListener("change", (e) => renderQuickDates(e.target.value));
+  document.addEventListener("keydown", (e) => {
+    const modal = $("#dessert-modal");
+    if (e.key === "Escape" && modal && !modal.hidden) closeDessertModal();
   });
 
   $("#submit-order")?.addEventListener("click", submitOrder);
@@ -467,15 +900,29 @@ function buildOrderWhatsappPayload(name, phone, town) {
     text += `Cash App: ${CONFIG.cashAppTag}\n`;
   }
   text += `Bebidas: ${drinks.length ? drinks.join(", ") : "Ninguna"}\n`;
-  text += "--- Platos ---\n";
-  for (const [id, qty] of linesSnapshot) {
-    const item = itemById(id);
-    if (!item) continue;
-    const unit = parsePriceToDouble(item.price);
-    text += `${qty}× ${item.name} @ ${item.price} = $${(unit * qty).toFixed(2)}\n`;
+  if (linesSnapshot.length > 0) {
+    text += "--- Platos ---\n";
+    for (const [id, qty] of linesSnapshot) {
+      const item = itemById(id);
+      if (!item) continue;
+      const unit = parsePriceToDouble(item.price);
+      text += `${qty}× ${item.name} @ ${item.price} = $${(unit * qty).toFixed(2)}\n`;
+    }
+  }
+  if (state.dessertOrders && state.dessertOrders.length > 0) {
+    text += "--- Postres (pre-orden) ---\n";
+    for (const entry of state.dessertOrders) {
+      const qty = entry.qty || 1;
+      const unit = entry.unitPrice || 0;
+      text += `${qty}× ${entry.nameSnapshot} (${entry.sizeLabel}) @ $${unit.toFixed(2)} = $${(unit * qty).toFixed(2)}\n`;
+      text += `   📅 Para: ${formatFriendlyDate(entry.orderDate)}\n`;
+      if (entry.notes) text += `   📝 ${entry.notes}\n`;
+    }
   }
   const drinksTotal = calculateDrinksTotal();
   if (drinks.length) text += `Total bebidas: $${drinksTotal.toFixed(2)}\n`;
+  const dessertsTotal = calculateDessertsTotal();
+  if (dessertsTotal > 0) text += `Total postres: $${dessertsTotal.toFixed(2)}\n`;
   const delFee = calculateDeliveryFee();
   if (delFee > 0) text += `Cargo delivery: $${delFee.toFixed(2)}\n`;
   const total = calculateOrderTotal();
@@ -490,6 +937,7 @@ function buildOrderWhatsappPayload(name, phone, town) {
 
 function resetOrderFormAfterSend() {
   state.cart = new Map();
+  state.dessertOrders = [];
   for (const d of DRINK_LABELS) state.drinks[d] = 0;
   state.delivery = false;
   state.paymentCashApp = false;
@@ -537,8 +985,8 @@ function submitOrder() {
     alert("Completa nombre, teléfono y pueblo.");
     return;
   }
-  if (cartCount() === 0) {
-    alert("Agrega al menos un plato al pedido.");
+  if (cartCount() === 0 && dessertOrdersCount() === 0) {
+    alert("Agrega al menos un plato o postre al pedido.");
     return;
   }
 

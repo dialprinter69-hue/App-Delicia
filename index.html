@@ -34,9 +34,27 @@
         <div class="menu-list" id="menu-list"></div>
       </section>
 
+      <section id="desserts-section" aria-labelledby="desserts-heading" hidden>
+        <div class="section-title-row">
+          <h2 id="desserts-heading">Postres <span class="section-emoji" aria-hidden="true">🍰</span></h2>
+          <span class="section-line"></span>
+        </div>
+        <div class="section-intro">
+          <span class="section-intro-icon" aria-hidden="true">📅</span>
+          <p>Nuestros postres se preparan por encargo. Elige el tamaño y el día de entrega al pedirlos.</p>
+        </div>
+        <div class="menu-list desserts-list" id="desserts-list"></div>
+      </section>
+
       <section id="order" class="order-panel" aria-labelledby="order-heading">
         <h2 id="order-heading">Tu pedido</h2>
         <ul class="order-lines" id="order-lines"></ul>
+
+        <div id="dessert-orders-wrap" hidden>
+          <h3 class="sub-heading">Postres (pre-orden)</h3>
+          <ul class="order-lines dessert-order-lines" id="dessert-order-lines"></ul>
+        </div>
+
         <p class="summary" id="order-summary">Agrega platos al pedido desde el menú.</p>
 
         <h2 style="margin-top: 1rem; font-size: 1rem">Bebidas</h2>
@@ -121,6 +139,35 @@
         </div>
       </section>
     </main>
+
+    <!-- Dessert modal -->
+    <div id="dessert-modal" class="modal" aria-hidden="true" hidden>
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="dessert-modal-title">
+        <button type="button" id="dessert-modal-close" class="modal-close" aria-label="Cerrar">×</button>
+        <div class="modal-header">
+          <div class="modal-icon" aria-hidden="true">🍰</div>
+          <h3 id="dessert-modal-title">Postre</h3>
+          <p id="dessert-modal-subtitle">Elige tamaño y fecha de entrega.</p>
+        </div>
+        <div class="modal-body">
+          <div class="field-label">Tamaño</div>
+          <div id="dessert-sizes" class="size-options"></div>
+
+          <div class="field-label">Fecha de entrega</div>
+          <input type="date" id="dessert-date" class="date-input" />
+          <div id="dessert-quick-dates" class="quick-dates"></div>
+
+          <label class="textarea-label">
+            <span>Notas (opcional)</span>
+            <textarea id="dessert-notes" placeholder="Ej: sin canela, cumpleaños, etc." rows="2"></textarea>
+          </label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" id="dessert-modal-cancel">Cancelar</button>
+          <button type="button" class="btn btn-primary" id="dessert-modal-confirm">Agregar al pedido</button>
+        </div>
+      </div>
+    </div>
 
     <script>
       (function () {
